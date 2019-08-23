@@ -113,6 +113,60 @@ class RegisterPage extends StatefulWidget {
   _RegisterPageState createState() => _RegisterPageState();
 }
 
+void _sgd(BuildContext context) {
+  showGeneralDialog(
+    context: context,
+    pageBuilder: (BuildContext buildContext, Animation<double> animation,
+        Animation<double> secondaryAnimation) {
+      return Scaffold(
+        body: Center(
+          child: Wrap(
+            children: <Widget>[
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: new BorderRadius.circular(10.0),
+                  color: Colors.pink,
+                ),
+                width: 200.0,
+                height: 200.0,
+                child: new Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    new Center(
+                      child: new SizedBox(
+                        height: 50,
+                        width: 50,
+                        child: new CircularProgressIndicator(
+                          value: null,
+                          strokeWidth: 7.0,
+                        ),
+                      ),
+                    ),
+                    new Container(
+                      margin: const EdgeInsets.only(top: 25.0),
+                      child: new Center(
+                        child: new Text(
+                          'Loading...',
+                          style: new TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+    barrierDismissible: false,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Color(0x78808080),
+    transitionDuration: const Duration(milliseconds: 200),
+  );
+}
+
 class _RegisterPageState extends State<RegisterPage> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
@@ -155,13 +209,15 @@ class _RegisterPageState extends State<RegisterPage> {
                     // return object of type Dialog
                     return AlertDialog(
                       title: new Text('Success!'),
-                      content: new Text('Registration Success! Please verify your account from the email we sent you.'),
+                      content: new Text(
+                          'Registration Success! Please verify your account from the email we sent you.'),
                       actions: <Widget>[
                         // usually buttons at the bottom of the dialog
                         new FlatButton(
                           child: new Text("Close"),
                           onPressed: () {
-                            Navigator.of(context).popAndPushNamed('/');
+                            Navigator.of(context).pop();
+                            Navigator.of(context).pop();
                           },
                         ),
                       ],
@@ -215,20 +271,21 @@ class _RegisterPageState extends State<RegisterPage> {
                   RaisedButton(
                     child: Text('Register'),
                     onPressed: () {
-                      if (emailCtrl.text.isNotEmpty &&
-                          passCtrl.text.isNotEmpty &&
-                          rePassCtrl.text.isNotEmpty) {
-                        if (passCtrl.text == rePassCtrl.text) {
-                          sendRegisterRequest(emailCtrl.text, passCtrl.text,
-                              rePassCtrl.text, context);
-                        } else {
-                          _showSnackBar(
-                              context, snackBarMessages.PASSREPASSMISMATCH);
-                        }
-                      } else {
-                        _showSnackBar(
-                            context, snackBarMessages.EMPTYEMAILPASSREPASS);
-                      }
+                      _sgd(context);
+//                      if (emailCtrl.text.isNotEmpty &&
+//                          passCtrl.text.isNotEmpty &&
+//                          rePassCtrl.text.isNotEmpty) {
+//                        if (passCtrl.text == rePassCtrl.text) {
+//                          sendRegisterRequest(emailCtrl.text, passCtrl.text,
+//                              rePassCtrl.text, context);
+//                        } else {
+//                          _showSnackBar(
+//                              context, snackBarMessages.PASSREPASSMISMATCH);
+//                        }
+//                      } else {
+//                        _showSnackBar(
+//                            context, snackBarMessages.EMPTYEMAILPASSREPASS);
+//                      }
                     },
                   ),
                   FlatButton(
