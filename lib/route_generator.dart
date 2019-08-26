@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -69,6 +70,61 @@ void _showSnackBar(BuildContext context, snackBarMessages msg) {
   );
 }
 
+void _showLoadingDialog(BuildContext context) {
+  showGeneralDialog(
+    context: context,
+    pageBuilder: (BuildContext buildContext, Animation<double> animation,
+        Animation<double> secondaryAnimation) {
+      return Material(
+        type: MaterialType.transparency,
+        child: Center(
+          child: Wrap(
+            children: <Widget>[
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10.0),
+                  color: Colors.pink,
+                ),
+                width: 200.0,
+                height: 200.0,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Center(
+                      child: SizedBox(
+                        height: 50,
+                        width: 50,
+                        child: CircularProgressIndicator(
+                          backgroundColor: Colors.white,
+                          strokeWidth: 8.0,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(top: 25.0),
+                      child: Center(
+                        child: Text(
+                          'Loading...',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+    barrierDismissible: false,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Color(0x78808080),
+    transitionDuration: Duration(milliseconds: 200),
+  );
+}
+
 class RouteGenerator {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final args = settings.arguments;
@@ -113,65 +169,12 @@ class RegisterPage extends StatefulWidget {
   _RegisterPageState createState() => _RegisterPageState();
 }
 
-void _sgd(BuildContext context) {
-  showGeneralDialog(
-    context: context,
-    pageBuilder: (BuildContext buildContext, Animation<double> animation,
-        Animation<double> secondaryAnimation) {
-      return Scaffold(
-        body: Center(
-          child: Wrap(
-            children: <Widget>[
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: new BorderRadius.circular(10.0),
-                  color: Colors.pink,
-                ),
-                width: 200.0,
-                height: 200.0,
-                child: new Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    new Center(
-                      child: new SizedBox(
-                        height: 50,
-                        width: 50,
-                        child: new CircularProgressIndicator(
-                          value: null,
-                          strokeWidth: 7.0,
-                        ),
-                      ),
-                    ),
-                    new Container(
-                      margin: const EdgeInsets.only(top: 25.0),
-                      child: new Center(
-                        child: new Text(
-                          'Loading...',
-                          style: new TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-    barrierDismissible: false,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Color(0x78808080),
-    transitionDuration: const Duration(milliseconds: 200),
-  );
-}
-
 class _RegisterPageState extends State<RegisterPage> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   final rePassCtrl = TextEditingController();
 
+  bool _isButtonPressed = false;
   var res;
 
   Future sendRegisterRequest(String email, String password, String repass,
@@ -179,6 +182,8 @@ class _RegisterPageState extends State<RegisterPage> {
     final url = 'http://10.0.2.2/ctp1982019/register.php';
 
     try {
+      _showLoadingDialog(context);
+      _isButtonPressed = true;
       final response = await http.post(url, body: {
         'email': email,
         'password': password,
@@ -192,17 +197,22 @@ class _RegisterPageState extends State<RegisterPage> {
             switch (res['res']) {
               case '0':
                 _showSnackBar(context, snackBarMessages.EMPTYEMAILPASSREPASS);
+                _isButtonPressed = false;
                 break;
               case '1':
                 _showSnackBar(context, snackBarMessages.PASSREPASSMISMATCH);
+                _isButtonPressed = false;
                 break;
               case '2':
                 _showSnackBar(context, snackBarMessages.USEREXISTS);
+                _isButtonPressed = false;
                 break;
               case '3':
                 _showSnackBar(context, snackBarMessages.MAILERDOWN);
+                _isButtonPressed = false;
                 break;
               case '4':
+                Navigator.of(context).pop();
                 showDialog(
                   context: context,
                   builder: (BuildContext context) {
@@ -227,12 +237,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 break;
               default:
                 _showSnackBar(context, snackBarMessages.SERVERDOWN);
+                _isButtonPressed = false;
+                break;
             }
           }
         });
       }
     } on TimeoutException catch (_) {
       _showSnackBar(context, snackBarMessages.SERVERDOWN);
+      _isButtonPressed = false;
     }
   }
 
@@ -240,7 +253,9 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Register'),
+        title: Center(
+          child: Text('Register'),
+        ),
       ),
       body: Builder(
         builder: (context) => SafeArea(
@@ -271,21 +286,26 @@ class _RegisterPageState extends State<RegisterPage> {
                   RaisedButton(
                     child: Text('Register'),
                     onPressed: () {
-                      _sgd(context);
-//                      if (emailCtrl.text.isNotEmpty &&
-//                          passCtrl.text.isNotEmpty &&
-//                          rePassCtrl.text.isNotEmpty) {
-//                        if (passCtrl.text == rePassCtrl.text) {
-//                          sendRegisterRequest(emailCtrl.text, passCtrl.text,
-//                              rePassCtrl.text, context);
-//                        } else {
-//                          _showSnackBar(
-//                              context, snackBarMessages.PASSREPASSMISMATCH);
-//                        }
-//                      } else {
-//                        _showSnackBar(
-//                            context, snackBarMessages.EMPTYEMAILPASSREPASS);
-//                      }
+                      setState(() {
+                        if (!_isButtonPressed) {
+                          if (emailCtrl.text.isNotEmpty &&
+                              passCtrl.text.isNotEmpty &&
+                              rePassCtrl.text.isNotEmpty) {
+                            if (passCtrl.text == rePassCtrl.text) {
+                              sendRegisterRequest(emailCtrl.text, passCtrl.text,
+                                  rePassCtrl.text, context);
+                            } else {
+                              _showSnackBar(
+                                  context, snackBarMessages.PASSREPASSMISMATCH);
+                            }
+                          } else {
+                            _showSnackBar(
+                                context, snackBarMessages.EMPTYEMAILPASSREPASS);
+                          }
+                        }else{
+                          return null;
+                        }
+                      });
                     },
                   ),
                   FlatButton(
@@ -317,12 +337,15 @@ class _LoginPageState extends State<LoginPage> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
 
+  bool _isButtonPressed = false;
+
   var token;
 
   Future sendLoginRequest(
       String email, String password, BuildContext context) async {
     final url = 'http://10.0.2.2/ctp1982019/login.php';
     try {
+      _isButtonPressed = true;
       final response = await http.post(url, body: {
         'email': email,
         'password': password
@@ -331,11 +354,14 @@ class _LoginPageState extends State<LoginPage> {
         setState(() {
           // debugPrint(response.body);
           token = jsonDecode(response.body);
+          Navigator.of(context).pop();
           if (token.isNotEmpty) {
             if (token['res'] == '0') {
               _showSnackBar(context, snackBarMessages.EMAILPASSMISMATCH);
+              _isButtonPressed = false;
             } else if (token['res'] == '1') {
               _showSnackBar(context, snackBarMessages.USERNOTVERIFIED);
+              _isButtonPressed = false;
             } else {
               Navigator.of(context)
                   .pushReplacementNamed('/home', arguments: token['res']);
@@ -345,6 +371,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     } on TimeoutException catch (_) {
       _showSnackBar(context, snackBarMessages.SERVERDOWN);
+      _isButtonPressed = false;
     }
   }
 
@@ -352,7 +379,9 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: Center(
+          child: Text('Login'),
+        ),
       ),
       body: Builder(
         builder: (context) => SafeArea(
@@ -376,12 +405,20 @@ class _LoginPageState extends State<LoginPage> {
                   RaisedButton(
                     child: Text('Login'),
                     onPressed: () {
-                      if (emailCtrl.text.isEmpty || passCtrl.text.isEmpty) {
-                        _showSnackBar(context, snackBarMessages.EMPTYEMAILPASS);
-                      } else {
-                        sendLoginRequest(
-                            emailCtrl.text, passCtrl.text, context);
-                      }
+                      setState(() {
+                        if (!_isButtonPressed) {
+                          if (emailCtrl.text.isEmpty || passCtrl.text.isEmpty) {
+                            _showSnackBar(
+                                context, snackBarMessages.EMPTYEMAILPASS);
+                          } else {
+                            _showLoadingDialog(context);
+                            sendLoginRequest(
+                                emailCtrl.text, passCtrl.text, context);
+                          }
+                        } else {
+                          return null;
+                        }
+                      });
                     },
                   ),
                   FlatButton(
@@ -431,12 +468,12 @@ class _HomePageState extends State<HomePage> {
             children: <Widget>[
               DrawerHeader(
                 decoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: Colors.pink,
                 ),
                 child: Center(
                   child: Text(
                     'Welcome ' + resp['email'] + '!',
-                    style: TextStyle(fontSize: 20),
+                    style: TextStyle(fontSize: 20, color: Colors.white),
                   ),
                 ),
               ),
@@ -508,7 +545,9 @@ class _HomePageState extends State<HomePage> {
         children: <Widget>[],
       ),
       drawer: Builder(
-        builder: (context) => Drawer(child: userData(resp)),
+        builder: (context) => Drawer(
+          child: userData(resp),
+        ),
       ),
     );
   }
